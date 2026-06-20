@@ -68,10 +68,6 @@ Contributing
   3. Make changes and commit: git commit -am "Add feature"
   4. Push to the branch and open a pull request.
 
-License
-- Add a license file (e.g., `LICENSE`) and choose a license (MIT, Apache-2.0, etc.). Example:
-  - This project is licensed under the MIT License — see the LICENSE file for details.
-
 Author / Contact
 - Owner: sanjaynep
 - Repository: https://github.com/sanjaynep/june-solistic
