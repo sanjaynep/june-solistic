@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tilt and The Turn</title>
+    <!-- Beautiful cinematic serif font for titles and clean sans-serif for UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-red: #FF3E3E;
+            --color-orange: #FF8F3E;
+            --color-yellow: #FFD73E;
+            --color-green: #3EFF8F;
+            --color-blue: #3E8FFF;
+            --color-purple: #8F3EFF;
+            --color-bg-dark: #0A0814;
+            --color-text-light: #F0F0FF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--color-bg-dark);
+            color: var(--color-text-light);
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            background-color: #030206;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 8, 20, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            background: linear-gradient(45deg, var(--color-orange), var(--color-purple));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            color: rgba(240, 240, 255, 0.7);
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .btn {
+            font-family: 'Montserrat', sans-serif;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: var(--color-text-light);
+            padding: 14px 28px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: var(--color-text-light);
+            color: var(--color-bg-dark);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Start Screen Specific */
+        #start-screen p {
+            max-width: 550px;
+            line-height: 1.6;
+            color: rgba(240, 240, 255, 0.8);
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+
+        .controls-list {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            margin-bottom: 30px;
+            font-size: 0.8rem;
+            color: rgba(240, 240, 255, 0.6);
+        }
+
+        .control-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .control-item strong {
+            color: var(--color-yellow);
+        }
+
+        /* HUD overlay */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            z-index: 5;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(10, 8, 20, 0.6), rgba(10, 8, 20, 0));
+        }
+
+        .hud-item {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--color-text-light);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .hud-item strong {
+            color: var(--color-orange);
+        }
+
+        #health-bar-container {
+            width: 120px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+            overflow: hidden;
+        }
+
+        #health-bar {
+            width: 100%;
+            height: 100%;
+            background: var(--color-orange);
+            transition: width 0.2s ease;
+        }
+
+        /* Narrative Reflection Screen */
+        #reflection-screen h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--color-yellow);
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            letter-spacing: 0.1em;
+        }
+
+        #reflection-screen p {
+            max-width: 600px;
+            line-height: 1.8;
+            font-size: 1.05rem;
+            color: rgba(240, 240, 255, 0.9);
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        /* Ending Screen */
+        #ending-screen h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            letter-spacing: 0.15em;
+        }
+
+        #ending-screen p {
+            max-width: 600px;
+            line-height: 1.8;
+            font-size: 1.1rem;
+            color: rgba(240, 240, 255, 0.85);
+            margin-bottom: 40px;
+        }
+
+        #apex-indicator {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(143, 62, 255, 0.2);
+            border: 1px solid rgba(143, 62, 255, 0.4);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #E2CAFF;
+            box-shadow: 0 0 15px rgba(143, 62, 255, 0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            z-index: 6;
+        }
+
+        #apex-indicator.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- HUD -->
+        <div id="hud">
+            <div class="hud-item" id="time-display">JUNE 21, <strong>09:00 AM</strong></div>
+            <div class="hud-item" id="health-display">
+                VITALITY <div id="health-bar-container"><div id="health-bar"></div></div>
+            </div>
+            <div class="hud-item" id="tilt-display">TILT: <strong>0°</strong></div>
+        </div>
+
+        <!-- Solar Noon / Solstice Apex Alert -->
+        <div id="apex-indicator">SOLSTICE APEX: GRAVITY INVERTED</div>
+
+        <!-- Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="overlay">
+            <h1>The Tilt and The Turn</h1>
+            <div class="subtitle">"On the longest day, your choices cast the longest shadows."</div>
+            <p>
+                The sun does not move; the world turns around it. Control the axis of existence. Navigate platforms that solidify only in light, and bypass obstacles that deactivate only in shadow.
+            </p>
+            <p>
+                Spawning a <strong>Shadow Echo</strong> from 5 seconds ago, you must cooperate with your own past actions to unlock pathways, while managing a ticking solar clock that moves from Dawn to Dusk.
+            </p>
+            <div class="controls-list">
+                <div class="control-item"><strong>A / D</strong> — Move</div>
+                <div class="control-item"><strong>SPACE</strong> — Jump</div>
+                <div class="control-item"><strong>← / →</strong> — Tilt World</div>
+            </div>
+            <button class="btn" onclick="startGame()">Step Into the Light</button>
+        </div>
+
+        <!-- Narrative Reflection Screen -->
+        <div id="reflection-screen" class="overlay hidden">
+            <h2 id="reflection-title">Ancestral Memory</h2>
+            <p id="reflection-text">Historical log content...</p>
+            <button class="btn" onclick="closeReflection()">Absorb Memory</button>
+        </div>
+
+        <!-- Ending Screen -->
+        <div id="ending-screen" class="overlay hidden">
+            <div class="subtitle" style="margin-bottom: 5px;">THE JOURNEY COMPLETE</div>
+            <h2 id="ending-title" style="color: var(--color-green);">The Ending Title</h2>
+            <p id="ending-text">Ending narrative text...</p>
+            <button class="btn" onclick="restartGame()">Re-Align the Axis</button>
+        </div>
+    </div>
+
+    <script>
+        // Core game objects & variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        // Constants
+        const VIEW_WIDTH = 800;
+        const VIEW_HEIGHT = 600;
+        const LEVEL_CENTER = { x: 400, y: 300 };
+        const SUN_SCREEN = { x: 400, y: 100 }; // Fixed in screen space
+
+        // Particle System
+        let particles = [];
+
+        // Player & State
+        const player = {
+            x: 350,
+            y: 450,
+            w: 20,
+            h: 32,
+            vx: 0,
+            vy: 0,
+            health: 100,
+            maxHealth: 100,
+            grounded: false,
+            facingRight: true,
+            onEcho: false
+        };
+
+        const echo = {
+            x: 350,
+            y: 450,
+            active: false,
+            facingRight: true
+        };
+
+        // History Buffer (300 frames at 60fps = 5 seconds)
+        const historyBuffer = [];
+        const HISTORY_LIMIT = 300;
+
+        // Level Settings
+        let tiltAngle = 0; // in radians
+        const TILT_SPEED = 0.02;
+        const MAX_NORMAL_TILT = Math.PI / 3.2; // ~56 degrees
+        const GRAVITY_MAGNITUDE = 0.3;
+
+        // Solstice Clock Settings
+        let gameHour = 9; // starts at 9:00 AM
+        let gameMinute = 0;
+        let isNoonInverted = false;
+        let clockInterval = null;
+
+        // Interactive states
+        let yellowGateOpen = false;
+        let yellowPlatePressed = false;
+        let markersCollected = { 1: false, 2: false, 3: false };
+
+        // Lists of objects in level coordinate space
+        const platforms = [
+            // Start Landing (Blue)
+            { x: 250, y: 475, w: 300, h: 25, type: 'blue' },
+            
+            // Left platform with Pressure Plate (Green - active in light)
+            { x: 100, y: 360, w: 160, h: 20, type: 'green' },
+            
+            // Right platform with Spikes (Red - safe in shadow, dangerous in light)
+            { x: 540, y: 360, w: 160, h: 20, type: 'red' },
+            
+            // Central platform blocker (Blue - casts shadow)
+            { x: 340, y: 280, w: 120, h: 20, type: 'blue' },
+            
+            // Top safety platform (Blue)
+            { x: 260, y: 180, w: 180, h: 20, type: 'blue' },
+            
+            // Shrine landing platform (Blue)
+            { x: 350, y: 100, w: 100, h: 15, type: 'blue' }
+        ];
+
+        const pressurePlate = { x: 160, y: 350, w: 40, h: 10, pressed: false };
+        const yellowGate = { x: 480, y: 180, w: 20, h: 100 };
+        const shrine = { x: 390, y: 60, w: 20, h: 40 };
+
+        const orangeOrbs = [
+            { x: 130, y: 320, collected: false },
+            { x: 670, y: 320, collected: false },
+            { x: 280, y: 140, collected: false }
+        ];
+
+        const ancestralMarkers = [
+            { id: 1, x: 280, y: 440, color: '#FF3E3E', title: 'June 19, 1865 (Juneteenth)', text: '"The news arrived two and a half years late. The sun was hot, casting long shadows of a truth already declared but delayed. Freedom is not just a moment; it is a turning of the entire world."' },
+            { id: 2, x: 520, y: 440, color: '#3E8FFF', title: 'June 28, 1969 (Pride)', text: '"In the heat of Greenwich Village, those in the shadows stood up into the light. To be visible is to invite both the sun\'s warmth and the heat of the fire. We tilt the axis so all colors can shine."' },
+            { id: 3, x: 400, y: 245, color: '#8F3EFF', title: 'June 21st (The Solstice)', text: '"The longest day. The sun stands still at the apex. But the Earth does not stop. We are the ones who turn. We carry the echoes of the past, standing on the shoulders of those who moved before us."' }
+        ];
+
+        // Key states
+        const keys = {
+            a: false,
+            d: false,
+            w: false,
+            ArrowLeft: false,
+            ArrowRight: false,
+            Space: false
+        };
+
+        // Web Audio Synthesizer Class
+        class SolsticeSynth {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.panner = null;
+                this.droneOsc = null;
+                this.steelDrumInterval = null;
+                this.initialized = false;
+            }
+
+            init() {
+                try {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    this.masterGain = this.ctx.createGain();
+                    this.masterGain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    
+                    if (this.ctx.createStereoPanner) {
+                        this.panner = this.ctx.createStereoPanner();
+                        this.panner.pan.setValueAtTime(0, this.ctx.currentTime);
+                        this.masterGain.connect(this.panner);
+                        this.panner.connect(this.ctx.destination);
+                    } else {
+                        this.masterGain.connect(this.ctx.destination);
+                    }
+                    
+                    this.startAtmosphere();
+                    this.startSteelDrumSequence();
+                    this.initialized = true;
+                } catch (e) {
+                    console.error("Audio Synthesis failed to initialize:", e);
+                }
+            }
+
+            startAtmosphere() {
+                // Grounding low rumble drone
+                this.droneOsc = this.ctx.createOscillator();
+                const droneGain = this.ctx.createGain();
+                
+                this.droneOsc.type = 'triangle';
+                this.droneOsc.frequency.setValueAtTime(80, this.ctx.currentTime); // Low E
+                
+                droneGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                
+                this.droneOsc.connect(droneGain);
+                droneGain.connect(this.masterGain);
+                this.droneOsc.start();
+            }
+
+            updateTiltBinaural(tilt) {
+                if (!this.initialized) return;
+                
+                // Pan audio matching screen tilt
+                if (this.panner) {
+                    const targetPan = Math.max(-1, Math.min(1, tilt * 1.5));
+                    this.panner.pan.setTargetAtTime(targetPan, this.ctx.currentTime, 0.1);
+                }
+
+                // Adjust frequency based on tilt (High pitch right, low pitch left)
+                if (this.droneOsc) {
+                    const baseFreq = 80 + (tilt * 25);
+                    this.droneOsc.frequency.setTargetAtTime(baseFreq, this.ctx.currentTime, 0.1);
+                }
+            }
+
+            // Synthesizing a Steel Drum Note using metallic harmonic ratios
+            playSteelDrum(freq, delay = 0) {
+                if (!this.initialized) return;
+                const time = this.ctx.currentTime + delay;
+                
+                // Fundamental
+                const osc1 = this.ctx.createOscillator();
+                const gain1 = this.ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(freq, time);
+                gain1.gain.setValueAtTime(0.5, time);
+                gain1.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+                osc1.connect(gain1);
+                gain1.connect(this.masterGain);
+                
+                // First Harmonic (Octave)
+                const osc2 = this.ctx.createOscillator();
+                const gain2 = this.ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(freq * 2.0, time);
+                gain2.gain.setValueAtTime(0.25, time);
+                gain2.gain.exponentialRampToValueAtTime(0.01, time + 0.2);
+                osc2.connect(gain2);
+                gain2.connect(this.masterGain);
+
+                // Second Harmonic (Brassy/Metallic shimmer ratio)
+                const osc3 = this.ctx.createOscillator();
+                const gain3 = this.ctx.createGain();
+                osc3.type = 'sine';
+                osc3.frequency.setValueAtTime(freq * 2.51, time);
+                gain3.gain.setValueAtTime(0.15, time);
+                gain3.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                osc3.connect(gain3);
+                gain3.connect(this.masterGain);
+
+                osc1.start(time);
+                osc2.start(time);
+                osc3.start(time);
+                
+                osc1.stop(time + 0.5);
+                osc2.stop(time + 0.5);
+                osc3.stop(time + 0.5);
+            }
+
+            // Synthesizing a soulful, reflective trumpet tone (Sawtooth + Lowpass filter + Vibrato)
+            playTrumpet(freq, duration = 1.5) {
+                if (!this.initialized) return;
+                const time = this.ctx.currentTime;
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const filter = this.ctx.createBiquadFilter();
+                
+                // Low-frequency oscillator for subtle vibrato (breath simulation)
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                lfo.frequency.setValueAtTime(5.5, time); // 5.5Hz vibrato
+                lfoGain.gain.setValueAtTime(3, time); // Pitch shift amplitude
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(freq, time);
+                
+                filter.type = 'lowpass';
+                filter.Q.setValueAtTime(4, time);
+                filter.frequency.setValueAtTime(200, time);
+                filter.frequency.exponentialRampToValueAtTime(freq * 3.5, time + 0.2);
+                filter.frequency.exponentialRampToValueAtTime(freq * 1.5, time + duration);
+
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.4, time + 0.15); // soft attack
+                gain.gain.setValueAtTime(0.4, time + duration - 0.3);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.masterGain);
+                
+                lfo.start(time);
+                osc.start(time);
+                
+                lfo.stop(time + duration);
+                osc.stop(time + duration);
+            }
+
+            startSteelDrumSequence() {
+                // Gentle syncopated Caribbean pulse
+                const chord = [293.66, 329.63, 392.00, 440.00]; // D4, E4, G4, A4 (Pentatonic)
+                let step = 0;
+                
+                this.steelDrumInterval = setInterval(() => {
+                    if (step % 4 === 0) {
+                        this.playSteelDrum(chord[0]);
+                    } else if (step % 4 === 2) {
+                        this.playSteelDrum(chord[2]);
+                    } else if (step % 8 === 5) {
+                        this.playSteelDrum(chord[1]);
+                    }
+                    step++;
+                }, 400);
+            }
+
+            playMelody() {
+                // Mournful trumpet riff
+                const root = 196.00; // G3
+                this.playTrumpet(root, 1.2);
+                setTimeout(() => this.playTrumpet(root * 1.2, 0.8), 800);
+                setTimeout(() => this.playTrumpet(root * 1.5, 2.0), 1400);
+            }
+
+            playCollectChime() {
+                if (!this.initialized) return;
+                const time = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, time); // D5
+                osc.frequency.exponentialRampToValueAtTime(1174.66, time + 0.25); // D6
+                
+                gain.gain.setValueAtTime(0.4, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start(time);
+                osc.stop(time + 0.3);
+            }
+
+            playClick() {
+                if (!this.initialized) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            stop() {
+                clearInterval(this.steelDrumInterval);
+                if (this.droneOsc) this.droneOsc.stop();
+                this.initialized = false;
+            }
+        }
+
+        const synth = new SolsticeSynth();
+
+        // Helper: Geometry Utilities
+        function rotatePoint(pt, pivot, angle) {
+            const dx = pt.x - pivot.x;
+            const dy = pt.y - pivot.y;
+            const s = Math.sin(angle);
+            const c = Math.cos(angle);
+            return {
+                x: dx * c - dy * s + pivot.x,
+                y: dx * s + dy * c + pivot.y
+            };
+        }
+
+        function lineIntersectsLine(p1, p2, p3, p4) {
+            const denom = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y);
+            if (denom === 0) return false;
+            const ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denom;
+            const ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denom;
+            return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+        }
+
+        // Raycast Shadow check
+        function isPointInShadow(sunWorld, targetPoint, occluders) {
+            for (let obs of occluders) {
+                // If the block itself holds the target point, technically not shadowed, but occluded
+                if (targetPoint.x >= obs.x && targetPoint.x <= obs.x + obs.w &&
+                    targetPoint.y >= obs.y && targetPoint.y <= obs.y + obs.h) {
+                    return true;
+                }
+
+                // Check intersection against 4 edges of the bounding box
+                const edges = [
+                    [{x: obs.x, y: obs.y}, {x: obs.x + obs.w, y: obs.y}],
+                    [{x: obs.x + obs.w, y: obs.y}, {x: obs.x + obs.w, y: obs.y + obs.h}],
+                    [{x: obs.x + obs.w, y: obs.y + obs.h}, {x: obs.x, y: obs.y + obs.h}],
+                    [{x: obs.x, y: obs.y + obs.h}, {x: obs.x, y: obs.y}]
+                ];
+
+                for (let edge of edges) {
+                    if (lineIntersectsLine(sunWorld, targetPoint, edge[0], edge[1])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Setup Listeners
+        window.addEventListener('keydown', e => {
+            if (['ArrowLeft', 'ArrowRight', 'Space', 'ArrowUp'].includes(e.code)) {
+                e.preventDefault();
+            }
+            if (e.code === 'KeyA') keys.a = true;
+            if (e.code === 'KeyD') keys.d = true;
+            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') keys.w = true;
+            if (e.code === 'ArrowLeft') keys.ArrowLeft = true;
+            if (e.code === 'ArrowRight') keys.ArrowRight = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            if (e.code === 'KeyA') keys.a = false;
+            if (e.code === 'KeyD') keys.d = false;
+            if (e.code === 'KeyW' || e.code === 'Space' || e.code === 'ArrowUp') keys.w = false;
+            if (e.code === 'ArrowLeft') keys.ArrowLeft = false;
+            if (e.code === 'ArrowRight') keys.ArrowRight = false;
+        });
+
+        // Initialize and setup High DPI Canvas
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = VIEW_WIDTH * dpr;
+            canvas.height = VIEW_HEIGHT * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        // Particle generator
+        function spawnParticles(x, y, color, count = 5, speedFactor = 1) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 4 * speedFactor,
+                    vy: (Math.random() - 0.5) * 4 * speedFactor,
+                    color: color,
+                    alpha: 1.0,
+                    size: Math.random() * 4 + 1.5,
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.01
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= p.decay;
+                p.alpha = Math.max(0, p.life);
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawParticles() {
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Start Game Game loop trigger
+        function startGame() {
+            document.getElementById('start-screen').classList.add('hidden');
+            synth.init();
+            synth.playMelody();
+            
+            // Advance clock steady tick
+            clockInterval = setInterval(() => {
+                gameMinute += 2;
+                if (gameMinute >= 60) {
+                    gameMinute = 0;
+                    gameHour += 1;
+                    if (gameHour === 12 && !isNoonInverted) {
+                        triggerNoonInversion();
+                    }
+                    if (gameHour >= 18) {
+                        gameHour = 18; // cap at 6:00 PM
+                    }
+                }
+                updateHUD();
+            }, 350);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateHUD() {
+            const minutesStr = gameMinute.toString().padStart(2, '0');
+            const period = gameHour >= 12 ? 'PM' : 'AM';
+            const hrDisplay = gameHour > 12 ? gameHour - 12 : gameHour;
+            const hrStr = hrDisplay.toString().padStart(2, '0');
+            
+            document.getElementById('time-display').innerHTML = `JUNE 21, <strong>${hrStr}:${minutesStr} ${period}</strong>`;
+            document.getElementById('health-bar').style.width = `${player.health}%`;
+            document.getElementById('tilt-display').innerHTML = `TILT: <strong>${Math.round(tiltAngle * (180 / Math.PI))}°</strong>`;
+        }
+
+        // Solstice Solar Noon Inversion
+        function triggerNoonInversion() {
+            isNoonInverted = true;
+            spawnParticles(player.x + 10, player.y + 16, '#8F3EFF', 40, 2.5);
+            
+            const indicator = document.getElementById('apex-indicator');
+            indicator.classList.add('visible');
+            setTimeout(() => {
+                indicator.classList.remove('visible');
+            }, 4000);
+
+            synth.playTrumpet(146.83, 3.0); // Deep resonant D3 trumpet alert
+        }
+
+        function restartGame() {
+            document.getElementById('ending-screen').classList.add('hidden');
+            
+            // Reset state
+            player.x = 350;
+            player.y = 450;
+            player.vx = 0;
+            player.vy = 0;
+            player.health = 100;
+            player.grounded = false;
+            
+            echo.active = false;
+            historyBuffer.length = 0;
+            
+            tiltAngle = 0;
+            gameHour = 9;
+            gameMinute = 0;
+            isNoonInverted = false;
+            yellowGateOpen = false;
+            yellowPlatePressed = false;
+            
+            markersCollected = { 1: false, 2: false, 3: false };
+            for (let marker of ancestralMarkers) {
+                marker.collected = false;
+            }
+            for (let orb of orangeOrbs) {
+                orb.collected = false;
+            }
+
+            clearInterval(clockInterval);
+            synth.stop();
+            startGame();
+        }
+
+        // Multi-directional physics movement and resolution
+        function updatePhysics() {
+            // Screen orientation dynamics
+            if (keys.ArrowLeft) {
+                tiltAngle -= TILT_SPEED;
+            }
+            if (keys.ArrowRight) {
+                tiltAngle += TILT_SPEED;
+            }
+
+            // Constrain tilt angle
+            const maxTilt = isNoonInverted ? Math.PI : MAX_NORMAL_TILT;
+            if (!isNoonInverted) {
+                tiltAngle = Math.max(-maxTilt, Math.min(maxTilt, tiltAngle));
+            } else {
+                // If inverted, we tilt relative to upside down (180 deg / Math.PI)
+                const limitLeft = Math.PI - MAX_NORMAL_TILT;
+                const limitRight = Math.PI + MAX_NORMAL_TILT;
+                tiltAngle = Math.max(limitLeft, Math.min(limitRight, tiltAngle));
+            }
+
+            synth.updateTiltBinaural(tiltAngle);
+
+            // Compute dynamic gravity vector relative to the screen space
+            // Gravity pulls vertically downward on screen, which rotates relative to the level coordinates
+            let gx = GRAVITY_MAGNITUDE * Math.sin(tiltAngle);
+            let gy = GRAVITY_MAGNITUDE * Math.cos(tiltAngle);
+
+            // Noon inversion reverses screen gravity
+            if (isNoonInverted) {
+                gx = GRAVITY_MAGNITUDE * Math.sin(tiltAngle);
+                gy = -GRAVITY_MAGNITUDE * Math.abs(Math.cos(tiltAngle)); // Pulls upward
+            }
+
+            player.vx += gx;
+            player.vy += gy;
+
+            // Player control acceleration along local X/Y axis
+            const accel = 0.45;
+            const maxSpeed = 4.5;
+            const jumpForce = 8.5;
+
+            // Simple movement inputs
+            if (keys.a) {
+                player.vx -= accel;
+                player.facingRight = false;
+                if (player.grounded) spawnParticles(player.x + player.w/2, player.y + player.h, 'rgba(255,255,255,0.2)', 1);
+            } else if (keys.d) {
+                player.vx += accel;
+                player.facingRight = true;
+                if (player.grounded) spawnParticles(player.x + player.w/2, player.y + player.h, 'rgba(255,255,255,0.2)', 1);
+            } else {
+                // Apply drag friction
+                player.vx *= 0.85;
+            }
+
+            if (!player.grounded) {
+                player.vx *= 0.98; // Air resistance
+            } else {
+                player.vx *= 0.85; // Ground friction
+            }
+
+            // Cap speeds
+            player.vx = Math.max(-maxSpeed, Math.min(maxSpeed, player.vx));
+            player.vy = Math.max(-12, Math.min(12, player.vy));
+
+            // Record player history for Echo
+            historyBuffer.push({
+                x: player.x,
+                y: player.y,
+                facingRight: player.facingRight,
+                grounded: player.grounded,
+                active: true
+            });
+
+            // Update Echo from 5s ago
+            if (historyBuffer.length >= HISTORY_LIMIT) {
+                const echoState = historyBuffer.shift();
+                echo.x = echoState.x;
+                echo.y = echoState.y;
+                echo.facingRight = echoState.facingRight;
+                echo.active = true;
+            } else {
+                echo.active = false;
+            }
+
+            // Build dynamic collision block list
+            const activeObstacles = [];
+            
+            // Re-evaluate Sun position in local world coordinates based on rotation
+            const sunWorld = rotatePoint(SUN_SCREEN, LEVEL_CENTER, -tiltAngle);
+
+            for (let plat of platforms) {
+                if (plat.type === 'green') {
+                    // Green platforms are only solid when illuminated
+                    const inShadow = isPointInShadow(sunWorld, { x: plat.x + plat.w/2, y: plat.y + plat.h/2 }, [
+                        // Occluder is the Central Blue platform blocker
+                        platforms[3]
+                    ]);
+                    plat.disabled = inShadow;
+                    if (!plat.disabled) {
+                        activeObstacles.push([plat.x, plat.y, plat.w, plat.h]);
+                    }
+                } else if (plat.type === 'red') {
+                    // Spikes are safe in shadow, dangerous in light
+                    const inShadow = isPointInShadow(sunWorld, { x: plat.x + plat.w/2, y: plat.y + plat.h/2 }, [
+                        platforms[3]
+                    ]);
+                    plat.disabled = inShadow; // spikes are "disabled" when in shadow
+                    activeObstacles.push([plat.x, plat.y, plat.w, plat.h]);
+                } else {
+                    // Regular solid platform
+                    activeObstacles.push([plat.x, plat.y, plat.w, plat.h]);
+                }
+            }
+
+            // Add Yellow gate to collision list if closed
+            if (!yellowGateOpen) {
+                activeObstacles.push([yellowGate.x, yellowGate.y, yellowGate.w, yellowGate.h]);
+            }
+
+            // Add Echo bounding box as an active platform if Echo is active and player is landing on it
+            if (echo.active) {
+                activeObstacles.push([echo.x, echo.y, player.w, player.h]);
+            }
+
+            // Run Multi-directional AABB resolving
+            let x = player.x;
+            let y = player.y;
+            const w = player.w;
+            const h = player.h;
+
+            // Resolve X axis
+            x += player.vx;
+            let collidedX = false;
+            let sideX = 0; // -1 left wall of plat, 1 right wall of plat
+            for (let box of activeObstacles) {
+                const [bx, by, bw, bh] = box;
+                if (x < bx + bw && x + w > bx && y < by + bh && y + h > by) {
+                    collidedX = true;
+                    if (player.vx > 0) { // moving right
+                        x = bx - w;
+                        sideX = 1;
+                    } else if (player.vx < 0) { // moving left
+                        x = bx + bw;
+                        sideX = -1;
+                    }
+                    player.vx = 0;
+                }
+            }
+
+            // Resolve Y axis
+            y += player.vy;
+            let collidedY = false;
+            let sideY = 0; // -1 top of plat, 1 bottom of plat
+            for (let box of activeObstacles) {
+                const [bx, by, bw, bh] = box;
+                if (x < bx + bw && x + w > bx && y < by + bh && y + h > by) {
+                    collidedY = true;
+                    if (player.vy > 0) { // moving down
+                        y = by - h;
+                        sideY = 1;
+                    } else if (player.vy < 0) { // moving up
+                        y = by + bh;
+                        sideY = -1;
+                    }
+                    player.vy = 0;
+                }
+            }
+
+            player.x = x;
+            player.y = y;
+
+            // Determine if player is grounded based on directional gravity
+            let isGroundedNow = false;
+            if (Math.abs(gy) >= Math.abs(gx)) {
+                // Primary vertical gravity
+                if (gy > 0 && sideY === 1) { // gravity down, standing on top of platform
+                    isGroundedNow = true;
+                } else if (gy < 0 && sideY === -1) { // gravity up, standing on bottom of platform
+                    isGroundedNow = true;
+                }
+            } else {
+                // Primary horizontal gravity (sideways levels)
+                if (gx > 0 && sideX === 1) { // gravity right, standing against left side
+                    isGroundedNow = true;
+                } else if (gx < 0 && sideX === -1) { // gravity left, standing against right side
+                    isGroundedNow = true;
+                }
+            }
+
+            player.grounded = isGroundedNow;
+
+            // Jump handling relative to grounding direction
+            if (keys.w && player.grounded) {
+                synth.playSteelDrum(392.00); // sound on jump
+                if (Math.abs(gy) >= Math.abs(gx)) {
+                    if (gy > 0) player.vy = -jumpForce;
+                    else player.vy = jumpForce;
+                } else {
+                    if (gx > 0) player.vx = -jumpForce;
+                    else player.vx = jumpForce;
+                }
+                player.grounded = false;
+                spawnParticles(player.x + w/2, player.y + h/2, 'rgba(255,255,255,0.7)', 15);
+            }
+
+            // Fall out of bounds check
+            const distFromCenter = Math.sqrt(Math.pow(player.x - LEVEL_CENTER.x, 2) + Math.pow(player.y - LEVEL_CENTER.y, 2));
+            if (distFromCenter > 420) {
+                // Fall in the cosmic abyss
+                player.health = 0;
+            }
+
+            // Check if player lands on Spikes (Red platforms that are NOT in shadow)
+            for (let plat of platforms) {
+                if (plat.type === 'red' && !plat.disabled) {
+                    // Check if player bounding box touches top of spike
+                    if (player.x + player.w > plat.x && player.x < plat.x + plat.w &&
+                        player.y + player.h >= plat.y - 12 && player.y < plat.y + plat.h) {
+                        player.health -= 1.5; // continuous damage
+                        spawnParticles(player.x + player.w/2, player.y + player.h, 'var(--color-red)', 3);
+                    }
+                }
+            }
+
+            // Check Pressure Plate activations (both Player and Echo can press it)
+            let platePressedNow = false;
+            if (player.x + player.w > pressurePlate.x && player.x < pressurePlate.x + pressurePlate.w &&
+                player.y + player.h >= pressurePlate.y && player.y < pressurePlate.y + pressurePlate.h + 5) {
+                platePressedNow = true;
+            }
+            if (echo.active &&
+                echo.x + player.w > pressurePlate.x && echo.x < pressurePlate.x + pressurePlate.w &&
+                echo.y + player.h >= pressurePlate.y && echo.y < pressurePlate.y + player.h + 5) {
+                platePressedNow = true;
+            }
+
+            if (platePressedNow && !yellowPlatePressed) {
+                yellowPlatePressed = true;
+                yellowGateOpen = true;
+                spawnParticles(pressurePlate.x + pressurePlate.w/2, pressurePlate.y, 'var(--color-yellow)', 20);
+                synth.playClick();
+            } else if (!platePressedNow && yellowPlatePressed) {
+                yellowPlatePressed = false;
+                yellowGateOpen = false;
+            }
+
+            // Collect Orbs
+            for (let orb of orangeOrbs) {
+                if (!orb.collected) {
+                    const dx = player.x + player.w/2 - orb.x;
+                    const dy = player.y + player.h/2 - orb.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 25) {
+                        orb.collected = true;
+                        synth.playCollectChime();
+                        // Advance time by 45 minutes as a tactical bonus reward!
+                        gameHour += 1;
+                        gameMinute += 15;
+                        if (gameMinute >= 60) {
+                            gameMinute -= 60;
+                        }
+                        updateHUD();
+                        spawnParticles(orb.x, orb.y, 'var(--color-orange)', 25);
+                    }
+                }
+            }
+
+            // Touch Ancestral Markers (Story triggers)
+            for (let marker of ancestralMarkers) {
+                if (!marker.collected) {
+                    const dx = player.x + player.w/2 - marker.x;
+                    const dy = player.y + player.h/2 - marker.y;
+                    if (Math.sqrt(dx*dx + dy*dy) < 25) {
+                        marker.collected = true;
+                        synth.playClick();
+                        triggerReflection(marker);
+                    }
+                }
+            }
+
+            // Verify Win Condition (Reach Shrine)
+            const dxShrine = player.x + player.w/2 - (shrine.x + shrine.w/2);
+            const dyShrine = player.y + player.h/2 - (shrine.y + shrine.h/2);
+            if (Math.sqrt(dxShrine*dxShrine + dyShrine*dyShrine) < 30) {
+                triggerWin();
+            }
+
+            // Check Loss condition
+            if (player.health <= 0) {
+                triggerLoss();
+            }
+        }
+
+        // Draw dynamic shadows on Canvas
+        function drawEdgeShadows(sunWorld, platformsList) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(10, 5, 25, 0.45)'; // Sleek transparent indigo shadow overlay
+
+            for (let plat of platformsList) {
+                // Only Solid blocks cast shadows
+                if (plat.type === 'green' && plat.disabled) continue; // no shadow if disabled
+
+                const edges = [
+                    { v1: {x: plat.x, y: plat.y}, v2: {x: plat.x + plat.w, y: plat.y}, normal: {x: 0, y: -1} },         // Top
+                    { v1: {x: plat.x + plat.w, y: plat.y}, v2: {x: plat.x + plat.w, y: plat.y + plat.h}, normal: {x: 1, y: 0} },   // Right
+                    { v1: {x: plat.x + plat.w, y: plat.y + plat.h}, v2: {x: plat.x, y: plat.y + plat.h}, normal: {x: 0, y: 1} },   // Bottom
+                    { v1: {x: plat.x, y: plat.y + plat.h}, v2: {x: plat.x, y: plat.y}, normal: {x: -1, y: 0} }           // Left
+                ];
+
+                for (let edge of edges) {
+                    // Midpoint of the edge
+                    const mx = (edge.v1.x + edge.v2.x) / 2;
+                    const my = (edge.v1.y + edge.v2.y) / 2;
+
+                    // Vector from Sun to midpoint
+                    const toMidX = mx - sunWorld.x;
+                    const toMidY = my - sunWorld.y;
+
+                    // Facing check
+                    const dot = toMidX * edge.normal.x + toMidY * edge.normal.y;
+                    if (dot > 0) { // Edge is facing away from sun, project shadow!
+                        const projDist = 2000;
+
+                        // Project v1
+                        const dx1 = edge.v1.x - sunWorld.x;
+                        const dy1 = edge.v1.y - sunWorld.y;
+                        const len1 = Math.sqrt(dx1*dx1 + dy1*dy1);
+                        const px1 = edge.v1.x + (dx1 / len1) * projDist;
+                        const py1 = edge.v1.y + (dy1 / len1) * projDist;
+
+                        // Project v2
+                        const dx2 = edge.v2.x - sunWorld.x;
+                        const dy2 = edge.v2.y - sunWorld.y;
+                        const len2 = Math.sqrt(dx2*dx2 + dy2*dy2);
+                        const px2 = edge.v2.x + (dx2 / len2) * projDist;
+                        const py2 = edge.v2.y + (dy2 / len2) * projDist;
+
+                        // Draw Shadow projection quadrilateral
+                        ctx.beginPath();
+                        ctx.moveTo(edge.v1.x, edge.v1.y);
+                        ctx.lineTo(edge.v2.x, edge.v2.y);
+                        ctx.lineTo(px2, py2);
+                        ctx.lineTo(px1, py1);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        // Main Rendering Functions
+        function drawScene() {
+            ctx.clearRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+            // 1. Draw split-diurnal stellar background
+            const bgGradient = ctx.createLinearGradient(0, 0, VIEW_WIDTH, 0);
+            bgGradient.addColorStop(0, '#361511'); // Warm Dawn Left
+            bgGradient.addColorStop(0.5, '#0F0926'); // Transition
+            bgGradient.addColorStop(1, '#030206'); // Starry Night Right
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, VIEW_WIDTH, VIEW_HEIGHT);
+
+            // Draw background twinkling stars on right half
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            for (let i = 0; i < 30; i++) {
+                const sx = (i * 37) % 400 + 400;
+                const sy = (i * 23) % VIEW_HEIGHT;
+                const size = ((i + Math.sin(Date.now() / 400 + i)) % 2) + 0.5;
+                ctx.fillRect(sx, sy, size, size);
+            }
+
+            // 2. Draw stationary Screen Sun (un-rotated layer)
+            const sunRadius = 75 + Math.sin(Date.now() / 500) * 4;
+            const sunGlow = ctx.createRadialGradient(SUN_SCREEN.x, SUN_SCREEN.y, 5, SUN_SCREEN.x, SUN_SCREEN.y, sunRadius);
+            sunGlow.addColorStop(0, '#FFFFFF');
+            sunGlow.addColorStop(0.2, 'rgba(255, 215, 62, 0.9)');
+            sunGlow.addColorStop(0.6, 'rgba(255, 143, 62, 0.4)');
+            sunGlow.addColorStop(1, 'rgba(143, 62, 255, 0)');
+            
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath();
+            ctx.arc(SUN_SCREEN.x, SUN_SCREEN.y, sunRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3. Apply Camera level tilt rotation around center
+            ctx.save();
+            ctx.translate(LEVEL_CENTER.x, LEVEL_CENTER.y);
+            ctx.rotate(tiltAngle);
+            ctx.translate(-LEVEL_CENTER.x, -LEVEL_CENTER.y);
+
+            // --- ALL WORLD SPACE OBJECTS NOW RENDER IN TILT SPACE ---
+
+            // Re-evaluate Sun position in local rotated world space
+            const sunWorld = rotatePoint(SUN_SCREEN, LEVEL_CENTER, -tiltAngle);
+
+            // Draw dynamic 2D Shadows from world Sun position
+            drawEdgeShadows(sunWorld, platforms);
+
+            // Draw Platforms
+            for (let plat of platforms) {
+                if (plat.type === 'green') {
+                    // Green platforms are foliage based, fade out when disabled (in shadow)
+                    ctx.save();
+                    ctx.globalAlpha = plat.disabled ? 0.25 : 1.0;
+                    ctx.fillStyle = 'var(--color-green)';
+                    ctx.shadowBlur = plat.disabled ? 0 : 15;
+                    ctx.shadowColor = 'var(--color-green)';
+                    ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+                    
+                    // Draw beautiful leaf accents
+                    ctx.fillStyle = '#1D7E44';
+                    for (let lx = plat.x + 8; lx < plat.x + plat.w; lx += 20) {
+                        ctx.fillRect(lx, plat.y + 4, 6, 6);
+                    }
+                    ctx.restore();
+                } else if (plat.type === 'red') {
+                    // Draw red spikes on platform
+                    ctx.fillStyle = '#6E1E1E';
+                    ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+
+                    // If spikes are illuminated, they glow and spikes rise
+                    ctx.save();
+                    if (!plat.disabled) {
+                        ctx.fillStyle = 'var(--color-red)';
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = 'var(--color-red)';
+                    } else {
+                        ctx.fillStyle = '#704242'; // Dark / safe spike look
+                    }
+
+                    // Spike teeth
+                    for (let sx = plat.x; sx < plat.x + plat.w; sx += 16) {
+                        ctx.beginPath();
+                        ctx.moveTo(sx, plat.y);
+                        ctx.lineTo(sx + 8, plat.y - 12);
+                        ctx.lineTo(sx + 16, plat.y);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                } else if (plat.type === 'blue') {
+                    // Safety / calmness zones
+                    ctx.save();
+                    ctx.fillStyle = 'var(--color-blue)';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = 'var(--color-blue)';
+                    ctx.fillRect(plat.x, plat.y, plat.w, plat.h);
+                    ctx.restore();
+                }
+            }
+
+            // Draw Pressure Plate
+            ctx.save();
+            ctx.fillStyle = yellowPlatePressed ? '#B89A29' : 'var(--color-yellow)';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'var(--color-yellow)';
+            ctx.fillRect(pressurePlate.x, yellowPlatePressed ? pressurePlate.y + 4 : pressurePlate.y, pressurePlate.w, yellowPlatePressed ? 6 : 10);
+            ctx.restore();
+
+            // Draw Yellow Gate
+            if (!yellowGateOpen) {
+                ctx.save();
+                ctx.fillStyle = 'var(--color-yellow)';
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = 'var(--color-yellow)';
+                ctx.globalAlpha = 0.85;
+                ctx.fillRect(yellowGate.x, yellowGate.y, yellowGate.w, yellowGate.h);
+                
+                // Tech energy stripes on gate
+                ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 2;
+                for (let gyLine = yellowGate.y + 10; gyLine < yellowGate.y + yellowGate.h; gyLine += 15) {
+                    ctx.beginPath();
+                    ctx.moveTo(yellowGate.x, gyLine);
+                    ctx.lineTo(yellowGate.x + yellowGate.w, gyLine);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            } else {
+                // Ghost outline of open gate
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 215, 62, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(yellowGate.x, yellowGate.y, yellowGate.w, yellowGate.h);
+                ctx.restore();
+            }
+
+            // Draw Ancestral Orbs
+            for (let marker of ancestralMarkers) {
+                if (!marker.collected) {
+                    ctx.save();
+                    ctx.fillStyle = marker.color;
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = marker.color;
+                    ctx.beginPath();
+                    // Floating hover effect
+                    const hoverY = marker.y + Math.sin(Date.now() / 200 + marker.id) * 4;
+                    ctx.arc(marker.x, hoverY, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Core white star inside orb
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.beginPath();
+                    ctx.arc(marker.x, hoverY, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // Draw Orange Time Orbs
+            for (let orb of orangeOrbs) {
+                if (!orb.collected) {
+                    ctx.save();
+                    ctx.fillStyle = 'var(--color-orange)';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'var(--color-orange)';
+                    ctx.beginPath();
+                    const hY = orb.x + Math.sin(Date.now() / 150) * 3;
+                    const vY = orb.y + Math.cos(Date.now() / 150) * 3;
+                    ctx.arc(hY, vY, 7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            // Draw Shrine (Turning Point)
+            ctx.save();
+            ctx.fillStyle = '#D4AF37'; // Golden bronze
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#FFD73E';
+            ctx.fillRect(shrine.x, shrine.y, shrine.w, shrine.h);
+
+            // Hovering rotating portal circle
+            ctx.strokeStyle = 'var(--color-purple)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(shrine.x + shrine.w/2, shrine.y, 25, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner glowing core
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(shrine.x + shrine.w/2, shrine.y, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // Draw Echo (The Ghostly Past)
+            if (echo.active) {
+                ctx.save();
+                ctx.globalAlpha = 0.45;
+                ctx.fillStyle = '#AEE2FF'; // Glowing spectral silver blue
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#3E8FFF';
+                ctx.fillRect(echo.x, echo.y, player.w, player.h);
+
+                // Echo visor line
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(echo.facingRight ? echo.x + 12 : echo.x, echo.y + 6, 8, 3);
+                ctx.restore();
+
+                // Soft particle trail behind echo
+                if (Math.random() < 0.25) {
+                    spawnParticles(echo.x + player.w/2, echo.y + player.h/2, 'rgba(62, 143, 255, 0.4)', 2, 0.5);
+                }
+            }
+
+            // Draw Player (Stark White Anomaly)
+            ctx.save();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#FFFFFF';
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+
+            // Glow visor matching timezone
+            ctx.fillStyle = isNoonInverted ? 'var(--color-purple)' : 'var(--color-orange)';
+            ctx.fillRect(player.facingRight ? player.x + 12 : player.x, player.y + 6, 8, 3);
+            ctx.restore();
+
+            // Draw Particle effects inside world space
+            drawParticles();
+
+            ctx.restore(); // --- EXIT TILT SPACE ---
+        }
+
+        // Narrative Overlay Interactions
+        function triggerReflection(marker) {
+            clearInterval(clockInterval);
+            
+            const screen = document.getElementById('reflection-screen');
+            document.getElementById('reflection-title').innerText = marker.title;
+            document.getElementById('reflection-title').style.color = marker.color;
+            document.getElementById('reflection-text').innerText = marker.text;
+            
+            screen.classList.remove('hidden');
+            synth.playTrumpet(220.00, 1.8); // Play mournful trumpet phrase
+        }
+
+        function closeReflection() {
+            document.getElementById('reflection-screen').classList.add('hidden');
+            synth.playClick();
+            
+            // Resume clock progression
+            clockInterval = setInterval(() => {
+                gameMinute += 2;
+                if (gameMinute >= 60) {
+                    gameMinute = 0;
+                    gameHour += 1;
+                    if (gameHour === 12 && !isNoonInverted) {
+                        triggerNoonInversion();
+                    }
+                    if (gameHour >= 18) {
+                        gameHour = 18;
+                    }
+                }
+                updateHUD();
+            }, 350);
+        }
+
+        // Ending triggers (Replayability with 3 endings)
+        function triggerWin() {
+            clearInterval(clockInterval);
+            cancelAnimationFrame(animationFrameId);
+            synth.stop();
+
+            const endScreen = document.getElementById('ending-screen');
+            const title = document.getElementById('ending-title');
+            const desc = document.getElementById('ending-text');
+
+            if (gameHour < 11 || (gameHour === 11 && gameMinute < 30)) {
+                // Ending 1: Dawn
+                title.innerText = "The Dawn of Promise";
+                title.style.color = "var(--color-yellow)";
+                desc.innerText = "You reached the Turning Point early, while the morning air was fresh and the shadows stretched long across the land. True freedom is a slow-growing sprout, nurtured in the quiet cool of dawn. You step forward into the clearing, carrying the quiet, steady determination of those who rose before the sun.";
+            } else if (gameHour >= 11 && gameHour <= 13) {
+                // Ending 2: Noon (Apex of Light)
+                title.innerText = "The Apex of Light";
+                title.style.color = "var(--color-orange)";
+                desc.innerText = "You stood at the Turning Point exactly when the sun reached its highest, most blinding peak. No shadows can hide the truth now; you are fully visible, cast in pure golden brilliance. To be seen is to be free, yet fully exposed. You stand tall at the fulcrum of history, acting as a shining beacon for the next generation.";
+            } else {
+                // Ending 3: Dusk (The Evening Reflection)
+                title.innerText = "The Evening Reflection";
+                title.style.color = "var(--color-purple)";
+                desc.innerText = "You arrived as the day began to fold, and the warm orange of dusk melded into the cool indigo of twilight. The long shadows carry the ancient whispers of the ancestors. Freedom is not a quick sprint; it is a long, enduring legacy carried through the night. You rest now, knowing the circle of the day is complete.";
+            }
+
+            endScreen.classList.remove('hidden');
+        }
+
+        function triggerLoss() {
+            clearInterval(clockInterval);
+            cancelAnimationFrame(animationFrameId);
+            synth.stop();
+
+            const endScreen = document.getElementById('ending-screen');
+            const title = document.getElementById('ending-title');
+            const desc = document.getElementById('ending-text');
+
+            title.innerText = "Faded Into Shadow";
+            title.style.color = "var(--color-red)";
+            desc.innerText = "The weight of the shifting gravity or the scorching heat of the obstacles depleted your energy. But in June, the struggle is continuous and cooperative. Your Echo carries the legacy; try again to reach the Turning Point.";
+
+            endScreen.classList.remove('hidden');
+        }
+
+        // Standard Game loop
+        let lastTime = 0;
+        let accumulator = 0;
+        const timestep = 1000 / 60; // 60fps locked logic
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Cap delta time to prevent physics clipping on lag spikes
+            if (dt > 250) dt = 250;
+
+            accumulator += dt;
+            while (accumulator >= timestep) {
+                updatePhysics();
+                updateParticles();
+                accumulator -= timestep;
+            }
+
+            drawScene();
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // Kickoff setup on load
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+    </script>
+</body>
+</html>
